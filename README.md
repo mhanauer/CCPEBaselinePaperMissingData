@@ -27,8 +27,13 @@ Just loading the data and getting rid of missing values.  Getting fid of missing
 
 setwd("S:/Indiana Research & Evaluation/Matthew Hanauer/CCPEPaperData")
 CCPEBaseline = read.csv("CCPEBaselineFull.csv", header = TRUE)
+dim(CCPEBaseline)
+#
 
-CCPEBaseline = CCPEBaseline[c("RSKCIG","CIG30D","MJ30D",	"RSKMJ", "BINGE530D",	"RSKALC",	"R_WHITE_N",	"REL_IMP",	"INCOME",	"SEX_PR", "GENDER",	"YOB")]
+CCPEBaseline = CCPEBaseline[c("RSKCIG","CIG30D","MJ30D","RSKMJ", "BINGE530D",	"RSKALC",	"R_WHITE_N",	"REL_IMP", "HINCOMEO_N","SEX_PR", "GENDER",	"YOB")]
+
+dim(CCPEBaseline)
+
 CCPEBaseline = CCPEBaseline[1:744,]
 write.csv(CCPEBaseline, "CCPEBaseline.csv", row.names = FALSE)
 CCPEBaseline = read.csv("CCPEBaseline.csv", header = TRUE, na.strings = c(NA, 98, 99, 77, 97, " "))
@@ -46,11 +51,9 @@ dim(CCPEBaseline)
 Drop anyone who is not male or female.  So subset the data where gender equals 1 or 2
 Lose 3 total people.  1 equals male and 2 equals female.  Need to read and write the dataset to get the variables to be factors.  Also, changing gender to be 1 for male and 0 for female.
 ```{r}
-write.csv(CCPEBaseline, "CCPEBaseline.csv", row.names = FALSE)
-CCPEBaseline = read.csv("CCPEBaseline.csv", header = TRUE)
 
 CCPEBaseline =subset(CCPEBaseline, GENDER == 1 | GENDER == 2)
-dim(CCPEBaseline)
+
 
 CCPEBaseline$GENDER = ifelse(CCPEBaseline$GENDER == 1,1,0)
 
