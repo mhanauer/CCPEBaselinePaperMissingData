@@ -196,19 +196,11 @@ dim(CCPEBaseline)[1]
 
 
 ```
-Now we are imputing the data.  So get rid of HOMEincome and YOB befor you impute.  Only using the variables that were statistically significant in any of the models.  Can drop those variables from the models if you want later.
+If we get rid of sexual orientation, then we have no missing data patterns. 
 ```{r}
-CCPEBaseline$CenterHINCOMEO_N = NULL
-CCPEBaseline$CenterYOB = NULL
-library(BaylorEdPsych)
-CCPEBaselineMissing = CCPEBaseline[,1:12]
-
-CCPEBaselineMissing2 = CCPEBaseline[c("RSKCIG", "CIG30D", "MJ30D", "RSKMJ", "BINGE530D", "RSKALC", "R_WHITE_N", "REL_IMP", "SEX_PR", "GENDER", "AGE", "INCOME")]
-
-CCPEBaselineMissing3 = CCPEBaseline[c("RSKCIG", "CIG30D", "MJ30D", "RSKMJ", "BINGE530D", "RSKALC", "REL_IMP", "GENDER", "AGE", "INCOME")]
-
+CCPEBaselineMissing1 = CCPEBaseline[c("RSKCIG", "CIG30D", "MJ30D", "RSKMJ", "BINGE530D", "RSKALC", "R_WHITE_N", "REL_IMP", "SEX_PR", "GENDER", "AGE", "INCOME")]
 
 library(MissMech)
 
-TestMCARNormality(CCPEBaselineMissing3)
+TestMCARNormality(CCPEBaselineMissing1)
 ```
