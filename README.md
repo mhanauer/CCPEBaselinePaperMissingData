@@ -20,6 +20,9 @@ library(ggplot2)
 library(dplyr)      # for data manipulation
 library(tidyr)      # for reshaping data
 library(descr)
+library(pscl)
+library(prettyR)
+library(MissMech)
 
 ```
 Just loading the data and getting rid of missing values.  Getting fid of missing data here and calculating the percentage of missing data.
@@ -27,33 +30,35 @@ Just loading the data and getting rid of missing values.  Getting fid of missing
 
 setwd("S:/Indiana Research & Evaluation/Matthew Hanauer/CCPEPaperData")
 CCPEBaseline = read.csv("CCPEBaselineFull.csv", header = TRUE)
+dim(CCPEBaseline)
+#
 
-CCPEBaseline = CCPEBaseline[c("RSKCIG","CIG30D","MJ30D",	"RSKMJ", "BINGE530D",	"RSKALC",	"R_WHITE_N",	"REL_IMP",	"INCOME",	"SEX_PR", "GENDER",	"YOB")]
+CCPEBaseline = CCPEBaseline[c("RSKCIG","CIG30D","MJ30D","RSKMJ", "BINGE530D",	"RSKALC",	"R_WHITE_N",	"REL_IMP", "HINCOMEO_N","SEX_PR", "GENDER",	"YOB")]
+
+dim(CCPEBaseline)
+
 CCPEBaseline = CCPEBaseline[1:744,]
 write.csv(CCPEBaseline, "CCPEBaseline.csv", row.names = FALSE)
 CCPEBaseline = read.csv("CCPEBaseline.csv", header = TRUE, na.strings = c(NA, 98, 99, 77, 97, " "))
-CCPEBaselineTest = na.omit(CCPEBaseline)
-dim(CCPEBaselineTest)
 
-describe(CCPEBaselineTest)
 
 dim(CCPEBaseline)
 #CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
+#dim(CCPEBaseline)
 
 592/745
 ```
 Drop anyone who is not male or female.  So subset the data where gender equals 1 or 2
 Lose 3 total people.  1 equals male and 2 equals female.  Need to read and write the dataset to get the variables to be factors.  Also, changing gender to be 1 for male and 0 for female.
+
+So I need to change the values greater than 2 to -999 so I can subset those values and figure out which rows I need to delete.  Remember to find the deleted rows, I need to create a new data set and subset which values are -999 so I can find the rows and delete them below
 ```{r}
-write.csv(CCPEBaseline, "CCPEBaseline.csv", row.names = FALSE)
-CCPEBaseline = read.csv("CCPEBaseline.csv", header = TRUE)
+CCPEBaseline$GENDER = ifelse(CCPEBaseline$GENDER > 2, -999, CCPEBaseline$GENDER)
 
-CCPEBaseline =subset(CCPEBaseline, GENDER == 1 | GENDER == 2)
-dim(CCPEBaseline)
+#CCPEBaseline = subset(CCPEBaseline, GENDER  == -999)
+CCPEBaseline
 
-CCPEBaseline$GENDER = ifelse(CCPEBaseline$GENDER == 1,1,0)
-
+CCPEBaseline = CCPEBaseline[-c(287,472,590,648),]
 ```
 Now change AGE to AGE by subtracting 2018 from YOB.  
 ```{r}
@@ -63,67 +68,10 @@ Change home income to split on something 30,000 or lower is low income.  We choo
 
 Change sex orientation to straight or non-straight where is straight and zero is non-straight
 ```{r}
-
-CCPEBaseline$INCOME = ifelse(CCPEBaseline$INCOME == 1, 0, ifelse(CCPEBaseline$INCOME == 2, 0, 1))
-CCPEBaseline
+CCPEBaseline$INCOME = ifelse(CCPEBaseline$HINCOMEO_N == 1, 0, ifelse(CCPEBaseline$HINCOMEO_N == 2, 0, 1))
 CCPEBaseline$SEX_PR = ifelse(CCPEBaseline$SEX_PR ==1, 1, 0)
-
 ```
 
-Instead try a cross tab of gender and substance misuse
-I want the average number of use for each of the categories.
-Use the compmeans function to the means and numbers for each category
-Do this for every categorical variable and then split age on the mean and do it for that as well.
-
-Need to repeat this process for each substance.
-
-Then figure out how to create a table from this.
-```{r}
-attach(CCPEBaseline)
-R_WHITE_Marj = round(compmeans(MJ30D, R_WHITE_N), 2)
-REL_IMPMarji = round(compmeans(MJ30D, REL_IMP),2)
-INCOMEMarj = round(compmeans(MJ30D, INCOME),2)
-SEX_PRMarj = round(compmeans(MJ30D, SEX_PR),2)
-genderMarj = round(compmeans(MJ30D, GENDER),2)
-
-## Change age to split in the mean
-ageMean = mean(AGE)
-ageMean
-AGECross = ifelse(AGE > ageMean, 1, 0)
-ageMarj = round(compmeans(MJ30D, AGECross),2)
-
-#### Cig  #### #### #### #### #### #### #### 
-
-R_WHITE_CIG = round(compmeans(CIG30D, R_WHITE_N),2)
-REL_IMPCIG = round(compmeans(CIG30D, REL_IMP),2)
-INCOMECIG = round(compmeans(CIG30D, INCOME),2)
-SEX_PRCIG = round(compmeans(CIG30D, SEX_PR),2)
-genderCIG = round(compmeans(CIG30D, GENDER),2)
-
-ageMean = mean(AGE)
-ageMean
-AGECross = ifelse(AGE > ageMean, 1, 0)
-ageCIG = round(compmeans(CIG30D, AGECross),2)
-
-
-
-
-#### Binge #### #### #### #### #### #### #### 
-R_WHITE_BINGE = round(compmeans(BINGE530D, R_WHITE_N),2)
-REL_IMPBINGE = round(compmeans(BINGE530D, REL_IMP),2)
-INCOMEBINGE = round(compmeans(BINGE530D, INCOME),2)
-SEX_PRBINGE = round(compmeans(BINGE530D, SEX_PR),2)
-genderBINGE = round(compmeans(BINGE530D, GENDER),2)
-
-## Change age to split in the mean
-ageMean = mean(AGE)
-ageMean
-AGECross = ifelse(AGE > ageMean, 1, 0)
-ageBINGE = round(compmeans(BINGE530D, AGECross),2)
-
-
-
-```
 Get descriptives.  Break them down by continous and non-continous.  Continous just get the mean and sd, but for ordinal get the count and percentage.
 ```{r}
 CCPEBaselineCount = data.frame(CIG30D = CCPEBaseline$CIG30D, MJ30D=CCPEBaseline$MJ30D, BINGE530D=CCPEBaseline$BINGE530D, CCPEBaseline$RSKCIG, CCPEBaseline$RSKMJ, CCPEBaseline$RSKALC)
@@ -131,7 +79,7 @@ round(apply(CCPEBaselineCount, 2, mean),2)
 round(apply(CCPEBaselineCount, 2, sd),2)
 
 ## Now create for binary and ordinal
-library(prettyR)
+
 describeCounts = data.frame(R_WHITE_N = CCPEBaseline$R_WHITE_N, REL_IMP = CCPEBaseline$REL_IMP, INCOME=CCPEBaseline$INCOME,SEX_PR= CCPEBaseline$SEX_PR,GENDER= CCPEBaseline$GENDER)
 describeCounts = apply(describeCounts, 2, function(x){describe.factor(x)})
 describeCounts
@@ -141,289 +89,311 @@ round(sd(CCPEBaseline$AGE),2)
 
 ```
 
+If we get rid of sexual orientation, then we have no missing data patterns. 
+```{r}
+CCPEBaseline = CCPEBaseline[c("RSKCIG", "CIG30D", "MJ30D", "RSKMJ", "BINGE530D", "RSKALC", "R_WHITE_N", "REL_IMP", "SEX_PR", "GENDER", "AGE", "INCOME")]
+TestMCARNormality(CCPEBaseline)
+```
+
+Test of MCAR is statistically significant at .05, (.03), so we will impute the missing values.
+
+Because it is predicting negative missing values for the count variables with both logs and linear, we need to say anything lower than zero is zero.  Nothing in this data set should be lower than zero, so we can be lazy and do an lapply across everything that says this. 
+
+Also, we need to round everything to 0 decimals, which should be fine nothing in the data set needs decimal points.
+
+So sqrts works for count variables; however, we still have decimal points.
+```{r}
+head(CCPEBaseline)
+
+m = 20
+#bds = matrix(c(2,0,30, 3, 0, 30, 5, 0 , 30), byrow =TRUE, nrow = 3, ncol = 3); bds
+
+CCPEBaseline.out = amelia(m = m,CCPEBaseline, noms = c("R_WHITE_N", "SEX_PR", "GENDER", "INCOME"), ords = c("RSKCIG", "RSKMJ", "RSKALC", "REL_IMP"), sqrts = c( "CIG30D", "MJ30D", "BINGE530D"))
+summary(CCPEBaseline.out)
+
+compare.density(CCPEBaseline.out, var = "CIG30D")
+compare.density(CCPEBaseline.out, var = "MJ30D")
+compare.density(CCPEBaseline.out, var = "BINGE530D")
+
+
+CCPEBaselineLin.out = amelia(m = m,CCPEBaseline, noms = c("R_WHITE_N", "SEX_PR", "GENDER", "INCOME"), ords = c("RSKCIG", "RSKMJ", "RSKALC", "REL_IMP"))
+compare.density(CCPEBaselineLin.out, var = "CIG30D")
+compare.density(CCPEBaselineLin.out, var = "MJ30D")
+compare.density(CCPEBaselineLin.out, var = "BINGE530D")
+
+```
+Ok supply your own missing data here
+```{r}
+CCPEBaselineMissing = lapply(1:m, function(x){CCPEBaseline.out$imputations[[x]]})
+CCPEBaselineMissing = na.omit(CCPEBaselineMissing)
+CCPEBaselineMissing = lapply(1:m, function(x){round(CCPEBaselineMissing[[x]], 0)})
+head(CCPEBaselineMissing[[1]])
+```
+
+
 
 Now we need to mean center all ordinal and continuous variables, so use the scale function, with scale equals false, because that creates z-scores by dividing by the standard deviation.  Creating a new name for the new variable data set. And adding all of the centered variables to the original data set.
 
 Renaming the variables, because they are now centered so I don't want to confuse them with other variables that are not centered.
 
 Creating interaction variables, because they are easier to include in the code.  See cigarette model below the interaction terms that I created here produce the same results as including the actual interaction term in the model.
+
+RSKCIG CIG30D MJ30D RSKMJ BINGE530D RSKALC  R_WHITE_N REL_IMP HINCOMEO_N SEX_PR GENDER YOB AGE INCOME
+
+Ok need to grab all five data sets and put them into one.
 ```{r}
-CCPEBaselineMeanCenter = CCPEBaseline
-head(CCPEBaselineMeanCenter)
+CCPEBaselineMissingMean = lapply(1:m, function(x){scale(CCPEBaselineMissing[[x]], scale = FALSE)})
 
-
-CCPEBaselineMeanCenter = scale(CCPEBaselineMeanCenter, scale = FALSE)
-head(CCPEBaselineMeanCenter)
-colnames(CCPEBaselineMeanCenter) = c("CenterRSKCIG", "CenterCIG30D", "CenterMJ30D", "CenterRSKMJ", "CenterBINGE530D", "CenterRSKALC", "CenterR_WHITE_N", "CenterREL_IMP", "CenterINCOME", "CenterSEX_PR", "CenterGENDER", "CenterYOB", "CenterAGE")
-
-# Maybe I don't need this. I think I can just add in the previous data frame
-CCPEBaseline = data.frame(CCPEBaselineMeanCenter, CCPEBaseline)
-head(CCPEBaseline)
-
-# Now create interaction terms
-# CenterRSKCIG
-CenterRSKCIG_CenterR_WHITE_N = CCPEBaseline$CenterRSKCIG*CCPEBaseline$CenterR_WHITE_N
-CenterRSKCIG_CenterREL_IMP = CCPEBaseline$CenterRSKCIG*CCPEBaseline$CenterREL_IMP
-CenterRSKCIG_CenterINCOME = CCPEBaseline$CenterRSKCIG*CCPEBaseline$CenterINCOME
-CenterRSKCIG_CenterSEX_PR = CCPEBaseline$CenterRSKCIG*CCPEBaseline$CenterSEX_PR
-CenterRSKCIG_CenterGENDER = CCPEBaseline$CenterRSKCIG*CCPEBaseline$CenterGENDER
-CenterRSKCIG_CenterAGE = CCPEBaseline$CenterRSKCIG*CCPEBaseline$CenterAGE
-
-# Now mar interaction 
-CenterRSKMJ_CenterR_WHITE_N = CCPEBaseline$CenterRSKMJ*CCPEBaseline$CenterR_WHITE_N
-CenterRSKMJ_CenterREL_IMP = CCPEBaseline$CenterRSKMJ*CCPEBaseline$CenterREL_IMP
-CenterRSKMJ_CenterINCOME = CCPEBaseline$CenterRSKMJ*CCPEBaseline$CenterINCOME
-CenterRSKMJ_CenterSEX_PR = CCPEBaseline$CenterRSKMJ*CCPEBaseline$CenterSEX_PR
-CenterRSKMJ_CenterGENDER = CCPEBaseline$CenterRSKMJ*CCPEBaseline$CenterGENDER
-CenterRSKMJ_CenterAGE = CCPEBaseline$CenterRSKMJ*CCPEBaseline$CenterAGE
-
-# Now alcohol interaction
-CenterRSKALC_CenterR_WHITE_N = CCPEBaseline$CenterRSKALC*CCPEBaseline$CenterR_WHITE_N
-CenterRSKALC_CenterREL_IMP = CCPEBaseline$CenterRSKALC*CCPEBaseline$CenterREL_IMP
-CenterRSKALC_CenterINCOME = CCPEBaseline$CenterRSKALC*CCPEBaseline$CenterINCOME
-CenterRSKALC_CenterSEX_PR = CCPEBaseline$CenterRSKALC*CCPEBaseline$CenterSEX_PR
-CenterRSKALC_CenterGENDER = CCPEBaseline$CenterRSKALC*CCPEBaseline$CenterGENDER
-CenterRSKALC_CenterAGE = CCPEBaseline$CenterRSKALC*CCPEBaseline$CenterAGE
-
-
-
-CCPEBaseline = cbind(CCPEBaseline, CenterRSKCIG_CenterR_WHITE_N, CenterRSKCIG_CenterREL_IMP, CenterRSKCIG_CenterINCOME, CenterRSKCIG_CenterSEX_PR, CenterRSKCIG_CenterGENDER, CenterRSKCIG_CenterAGE, CenterRSKMJ_CenterR_WHITE_N, CenterRSKMJ_CenterREL_IMP, CenterRSKMJ_CenterINCOME, CenterRSKMJ_CenterSEX_PR, CenterRSKMJ_CenterGENDER, CenterRSKMJ_CenterAGE, CenterRSKALC_CenterR_WHITE_N, CenterRSKALC_CenterREL_IMP, CenterRSKALC_CenterINCOME, CenterRSKALC_CenterSEX_PR, CenterRSKALC_CenterGENDER, CenterRSKALC_CenterAGE)
-
-summary(CCPEBaseline)
-dim(CCPEBaseline)[1]
+CCPEBaselineMissing = lapply(1:m, function(x){(data.frame(CCPEBaselineMissing[[x]], CCPEBaselineMissingMean[[x]]))})
+CCPEBaselineMissing[[1]]
+head(CCPEBaselineMissing)
 
 
 ```
-Cig model looking for interactions.  I looked for interactions one at time, because the model ran out of degrees of freedom or wouldn't run (not entirly sure, but it would run) with all the interaction terms included so looked at them one at a time.  
+Now run the analysis for count for cig, mar, and binge.
+
+Count Cig
 ```{r}
-# Race
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
+output = NULL
+coef_output =  NULL
+se_output = NULL
 
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG +  CenterRSKCIG_CenterR_WHITE_N + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
+cigMissingTest = summary(cigMissing[[1]])
+cigMissingTest$df.residual
 
-# Age
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterAGE + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
+for(i in 1:m){
+  output[[i]] = hurdle(CIG30D ~   RSKCIG.1*R_WHITE_N + RSKCIG.1*AGE.1 + RSKCIG.1*REL_IMP.1 + RSKCIG.1*INCOME + RSKCIG.1*SEX_PR+ RSKCIG.1*GENDER , data = CCPEBaselineMissing[[i]], dist = "poisson", zero.dist = "binomial")
+  output[[i]] = summary(output[[i]])
+  coef_output[[i]] = output[[i]]$coefficients$count[,1]
+  se_output[[i]] = output[[i]]$coefficients$count[,2]
+}
 
-# Religon is sig
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterREL_IMP + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
+coef_output = data.frame(coef_output)
+coef_output
+quickTrans = function(x){
+  x = data.frame(x)
+  x = t(x)
+  x = data.frame(x)
+}
 
-# Income
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterREL_IMP + CenterRSKCIG_CenterINCOME + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
+coef_output = quickTrans(coef_output)
+coef_output
+se_output = quickTrans(se_output)
 
-# Sex orien
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterREL_IMP + CenterRSKCIG_CenterSEX_PR + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
+coefsAll = mi.meld(q = coef_output, se = se_output)
 
-# Gender
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterREL_IMP + CenterRSKCIG_CenterGENDER + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
+meldAllT_stat = function(x,y){
+  coefsAll = mi.meld(q = x, se = y)
+  coefs1 = t(data.frame(coefsAll$q.mi))
+  ses1 = t(data.frame(coefsAll$se.mi))
+  t_stat = coefs1/ses1
+  options(scipen=999)
+  p = round((2*pt(-abs(t_stat), df = 710)),3)
+  return(data.frame(coefs1, ses1, t_stat, p))
+}
+results = meldAllT_stat(coef_output, se_output); results
+```
+Count mar
+```{r}
+output = NULL
+coef_output =  NULL
+se_output = NULL
 
-# Final model no impute
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterREL_IMP + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
-dim(CCPEBaseline)
+
+for(i in 1:m){
+  output[[i]] = hurdle(MJ30D ~   RSKMJ.1*R_WHITE_N + RSKMJ.1*AGE.1 + RSKMJ.1*REL_IMP.1 + RSKMJ.1*INCOME + RSKMJ.1*SEX_PR+ RSKMJ.1*GENDER , data = CCPEBaselineMissing[[i]], dist = "poisson", zero.dist = "binomial")
+  output[[i]] = summary(output[[i]])
+  coef_output[[i]] = output[[i]]$coefficients$count[,1]
+  se_output[[i]] = output[[i]]$coefficients$count[,2]
+}
+
+coef_output = data.frame(coef_output)
+coef_output
+quickTrans = function(x){
+  x = data.frame(x)
+  x = t(x)
+  x = data.frame(x)
+}
+
+coef_output = quickTrans(coef_output)
+coef_output
+se_output = quickTrans(se_output)
+
+coefsAll = mi.meld(q = coef_output, se = se_output)
+
+meldAllT_stat = function(x,y){
+  coefsAll = mi.meld(q = x, se = y)
+  coefs1 = t(data.frame(coefsAll$q.mi))
+  ses1 = t(data.frame(coefsAll$se.mi))
+  t_stat = coefs1/ses1
+  options(scipen=999)
+  p = round((2*pt(-abs(t_stat), df = 710)),3)
+  return(data.frame(coefs1, ses1, t_stat, p))
+}
+results = meldAllT_stat(coef_output, se_output); results
 
 ```
-Testing to make sure that when I create the interaction effect by combining variables and then including them they are not different from just measuring as an interaction effect.
+Count Binge
 ```{r}
-# Final model no impute
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-cig = glm.nb(CIG30D ~ RSKCIG + R_WHITE_N + CenterRSKCIG_CenterREL_IMP + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cig)
-
-cigTest = glm.nb(CIG30D ~  R_WHITE_N + CenterRSKCIG*CenterREL_IMP + AGE  + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cigTest)
-```
+output = NULL
+coef_output =  NULL
+se_output = NULL
 
 
-Mar model same process as with cigarettes.
-```{r}
-# Race
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterR_WHITE_N + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
+for(i in 1:m){
+  output[[i]] = hurdle(BINGE530D ~   RSKALC.1*R_WHITE_N + RSKALC.1*AGE.1 + RSKALC.1*REL_IMP.1 + RSKALC.1*INCOME + RSKALC.1*SEX_PR+ RSKALC.1*GENDER , data = CCPEBaselineMissing[[i]], dist = "poisson", zero.dist = "binomial")
+  output[[i]] = summary(output[[i]])
+  coef_output[[i]] = output[[i]]$coefficients$count[,1]
+  se_output[[i]] = output[[i]]$coefficients$count[,2]
+}
 
-# Age
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterAGE + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
+coef_output = data.frame(coef_output)
+coef_output
+quickTrans = function(x){
+  x = data.frame(x)
+  x = t(x)
+  x = data.frame(x)
+}
 
-# Religon 
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterREL_IMP + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
+coef_output = quickTrans(coef_output)
+coef_output
+se_output = quickTrans(se_output)
 
-# Income is sig
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N  + CenterRSKMJ_CenterINCOME + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
+coefsAll = mi.meld(q = coef_output, se = se_output)
 
-# Sex orien
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterINCOME + CenterRSKMJ_CenterSEX_PR + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
-
-# Gender is sig 
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterINCOME + CenterRSKMJ_CenterGENDER + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
-
-# Final model no impute
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-mar = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterINCOME + CenterRSKMJ_CenterGENDER +  AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(mar)
+meldAllT_stat = function(x,y){
+  coefsAll = mi.meld(q = x, se = y)
+  coefs1 = t(data.frame(coefsAll$q.mi))
+  ses1 = t(data.frame(coefsAll$se.mi))
+  t_stat = coefs1/ses1
+  options(scipen=999)
+  p = round((2*pt(-abs(t_stat), df = 710)),3)
+  return(data.frame(coefs1, ses1, t_stat, p))
+}
+results = meldAllT_stat(coef_output, se_output); results
 
 ```
-Try jtools.  First getting the data, then having the final two models mar and cigTest.
-Then using the interaction plots to plot the predicted values of the number of days someone smokes based on some moderator by the sd+1, mean, and sd-1 for the risk variable.
-
-Then we are using the sim_slopes, which looks at the slope of each risk variable either at one sd above, mean, and one sd below or for each factor.
+Logit cig
 ```{r}
-library(jtools)
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-colnames(CCPEBaseline)[1] = "Risk_Cigarette" 
-#CCPEBaselineTest$INCOME = as.factor(CCPEBaselineTest$INCOME)
-#CCPEBaselineTest$CenterRSKMJ = as.factor(CCPEBaselineTest$CenterRSKMJ)
+output = NULL
+coef_output =  NULL
+se_output = NULL
 
-marCenter = glm.nb(MJ30D ~ RSKMJ + R_WHITE_N + CenterRSKMJ_CenterINCOME + CenterRSKMJ_CenterGENDER +  AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(marCenter)
+cigMissingTest = summary(cigMissing[[1]])
+cigMissingTest$coefficients$count[,2]
 
-mar = glm.nb(MJ30D ~ R_WHITE_N + CenterRSKMJ*INCOME + CenterRSKMJ*GENDER  +  AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-cigTest = glm.nb(CIG30D ~  R_WHITE_N + Risk_Cigarette*CenterREL_IMP + AGE  + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(cigTest)
-summary(mar)
+for(i in 1:m){
+  output[[i]] = hurdle(CIG30D ~   RSKCIG.1*R_WHITE_N + RSKCIG.1*AGE.1 + RSKCIG.1*REL_IMP.1 + RSKCIG.1*INCOME + RSKCIG.1*SEX_PR+ RSKCIG.1*GENDER , data = CCPEBaselineMissing[[i]], dist = "poisson", zero.dist = "binomial")
+  output[[i]] = summary(output[[i]])
+  coef_output[[i]] = output[[i]]$coefficients$zero[,1]
+  se_output[[i]] = output[[i]]$coefficients$zero[,2]
+}
+
+coef_output = data.frame(coef_output)
+coef_output
+quickTrans = function(x){
+  x = data.frame(x)
+  x = t(x)
+  x = data.frame(x)
+}
+
+coef_output = quickTrans(coef_output)
+coef_output
+se_output = quickTrans(se_output)
+
+coefsAll = mi.meld(q = coef_output, se = se_output)
+
+meldAllT_stat = function(x,y){
+  coefsAll = mi.meld(q = x, se = y)
+  coefs1 = t(data.frame(coefsAll$q.mi))
+  ses1 = t(data.frame(coefsAll$se.mi))
+  t_stat = coefs1/ses1
+  options(scipen=999)
+  p = round((2*pt(-abs(t_stat), df = 710)),3)
+  return(data.frame(coefs1, ses1, t_stat, p))
+}
+results = meldAllT_stat(coef_output, se_output); results
+```
+Logit mar
+```{r}
+output = NULL
+coef_output =  NULL
+se_output = NULL
 
 
-marGender =  sim_slopes(mar, pred= "CenterRSKMJ", modx = "GENDER", johnson_neyman = TRUE, control.fdr = TRUE, robust = TRUE)
-marGender
-interact_plot(mar, pred= "CenterRSKMJ", modx = "GENDER", x.label = "Perceived risk of harm from marijuana smoking", y.label = "Predicted values for reported marijuana smoked")
+for(i in 1:m){
+  output[[i]] = hurdle(MJ30D ~   RSKMJ.1*R_WHITE_N + RSKMJ.1*AGE.1 + RSKMJ.1*REL_IMP.1 + RSKMJ.1*INCOME + RSKMJ.1*SEX_PR+ RSKMJ.1*GENDER , data = CCPEBaselineMissing[[i]], dist = "poisson", zero.dist = "binomial")
+  output[[i]] = summary(output[[i]])
+  coef_output[[i]] = output[[i]]$coefficients$zero[,1]
+  se_output[[i]] = output[[i]]$coefficients$zero[,2]
+}
 
+coef_output = data.frame(coef_output)
+coef_output
+quickTrans = function(x){
+  x = data.frame(x)
+  x = t(x)
+  x = data.frame(x)
+}
 
-marIncome = sim_slopes(mar, pred= "CenterRSKMJ", modx = "INCOME", johnson_neyman = TRUE, control.fdr = TRUE, robust = TRUE)
-marIncome
+coef_output = quickTrans(coef_output)
+coef_output
+se_output = quickTrans(se_output)
 
-interact_plot(mar,  pred= "CenterRSKMJ", modx = "INCOME", x.label = "Perceived risk of harm from marijuana smoking", y.label = "Predicted values for reported marijuana smoked")
+coefsAll = mi.meld(q = coef_output, se = se_output)
 
-
-cigRel = sim_slopes(cigTest, pred = "Risk_Cigarette", modx = "CenterREL_IMP", johnson_neyman = TRUE, control.fdr = TRUE, robust = TRUE)
-cigRel
-interact_plot(cigTest, pred = "CenterREL_IMP", modx = "Risk_Cigarette", x.label = "Religious importance", y.label = "Predicted values for reported cigarettes smoked")
-
-
+meldAllT_stat = function(x,y){
+  coefsAll = mi.meld(q = x, se = y)
+  coefs1 = t(data.frame(coefsAll$q.mi))
+  ses1 = t(data.frame(coefsAll$se.mi))
+  t_stat = coefs1/ses1
+  options(scipen=999)
+  p = round((2*pt(-abs(t_stat), df = 710)),3)
+  return(data.frame(coefs1, ses1, t_stat, p))
+}
+results = meldAllT_stat(coef_output, se_output); results
 
 ```
-Show processr results and how they are the same.
-Trying out process stuff: http://rpubs.com/markhw/processr
-
+Logit Binge
 ```{r}
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-CCPEBaselineMarin = CCPEBaseline
+output = NULL
+coef_output =  NULL
+se_output = NULL
 
-#CCPEBaselineMarin$INCOME = factor(CCPEBaselineMarin$INCOME)
-library(processr)
-options(scipen=999)
-#CCPEBaselineMarinTest = model1(iv = "CenterRSKMJ", dv = "MJ30D", mod = "INCOME", data = CCPEBaselineMarin)
 
-CCPEBaselineMarinTest = model1(iv = "CenterRSKMJ", dv = "MJ30D", mod = "INCOME", data = CCPEBaselineMarin)
-CCPEBaselineMarinTest
+for(i in 1:m){
+  output[[i]] = hurdle(BINGE530D ~   RSKALC.1*R_WHITE_N + RSKALC.1*AGE.1 + RSKALC.1*REL_IMP.1 + RSKALC.1*INCOME + RSKALC.1*SEX_PR+ RSKALC.1*GENDER , data = CCPEBaselineMissing[[i]], dist = "poisson", zero.dist = "binomial")
+  output[[i]] = summary(output[[i]])
+  coef_output[[i]] = output[[i]]$coefficients$count[,1]
+  se_output[[i]] = output[[i]]$coefficients$count[,2]
+}
 
-CCPEBaselineMarGender = CCPEBaseline
-CCPEBaselineMarGender = model1(iv = "CenterRSKMJ", dv = "MJ30D", "GENDER", data = CCPEBaselineMarGender)
-CCPEBaselineMarGender
+coef_output = data.frame(coef_output)
+coef_output
+quickTrans = function(x){
+  x = data.frame(x)
+  x = t(x)
+  x = data.frame(x)
+}
+
+coef_output = quickTrans(coef_output)
+coef_output
+se_output = quickTrans(se_output)
+
+coefsAll = mi.meld(q = coef_output, se = se_output)
+
+meldAllT_stat = function(x,y){
+  coefsAll = mi.meld(q = x, se = y)
+  coefs1 = t(data.frame(coefsAll$q.mi))
+  ses1 = t(data.frame(coefsAll$se.mi))
+  t_stat = coefs1/ses1
+  options(scipen=999)
+  p = round((2*pt(-abs(t_stat), df = 710)),3)
+  return(data.frame(coefs1, ses1, t_stat, p))
+}
+results = meldAllT_stat(coef_output, se_output); results
 ```
 
-
-
-
-
-
-Binge drinking interaction testing
-```{r}
-# Race
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N + CenterRSKALC_CenterR_WHITE_N + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-# Age
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N + CenterRSKALC_CenterAGE + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-# Religon 
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N + CenterRSKALC_CenterREL_IMP + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-# Income
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N + CenterRSKALC_CenterINCOME + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-# Sex orien
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N + CenterRSKALC_CenterSEX_PR + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-# Gender
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N  + CenterRSKALC_CenterGENDER + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-# Final model no impute
-CCPEBaseline = data.frame(na.omit(CCPEBaseline))
-dim(CCPEBaseline)
-alcohol = glm.nb(BINGE530D ~ RSKALC + R_WHITE_N + AGE  + REL_IMP + INCOME + SEX_PR+ GENDER , data = CCPEBaseline)
-summary(alcohol)
-
-```
-Now get the comparison to the national statistics.  So change CIG30D, CIG30D, and BINGE30 to 1 and 0's with any value above you being 1 and then get the mean and compare to national statistics.
-
-Have the summary function to check for anything negative which would be a missing value.
-```{r}
-nationStats = data.frame(CCPEBaseline$CIG30D,CCPEBaseline$MJ30D, CCPEBaseline$BINGE530D) 
-summary(nationStats)
-colnames(nationStats) = c("CIG30D", "MJ30D", "BINGE530D")
-nationStats = na.omit(nationStats)
-head(nationStats)
-nationStats = data.frame(apply(nationStats, 2, function(x)(ifelse(x >0, 1, 0))))
-head(nationStats)
-apply(nationStats, 2, mean)
-apply(nationStats, 2, sum)
-# test
-
-```
 
 
 
