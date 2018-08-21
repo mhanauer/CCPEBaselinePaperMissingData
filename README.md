@@ -63,6 +63,7 @@ CCPEBaseline = CCPEBaseline[-c(287,472,590,648),]
 Now change AGE to AGE by subtracting 2018 from YOB.  
 ```{r}
 CCPEBaseline$AGE = 2018-CCPEBaseline$YOB
+CCPEBaseline = subset(CCPEBaseline, AGE < 29)
 ```
 Change home income to split on something 30,000 or lower is low income.  We choose $30,000 because it was in the middle of the scale for the GPRA.  Ok so 1 and 2 are 30,000 and below so they are 0 and everything else is 1, because options 3,4,5 and higher than 30,000.
 
